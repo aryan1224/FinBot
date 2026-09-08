@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinBot · IndiaFirst Bank</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --ink: #221F1A;
+      --panel-grey: #35342F;
+      --panel-grey-2: #1E1D1A;
+      --gold: #C9992B;
+      --gold-bright: #E8B94A;
+      --paper: #FAF6EC;
+      --paper-line: #E7DFCB;
+      --user-bubble: #35342F;
+      --bot-bubble: #FFFFFF;
+      --muted: #8B8272;
+      --danger: #B4432E;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      display: flex;
+      min-height: 100vh;
+    }
+
+
+
+    a {
+      color: inherit;
+    }
+
+    .call-panel {
+      flex: 0 0 44%;
+      background: radial-gradient(120% 140% at 20% 0%, var(--panel-grey) 0%, var(--panel-grey-2) 65%);
+      color: var(--paper);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 48px 40px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .call-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(115deg, rgba(232, 185, 74, 0.05) 0px, rgba(232, 185, 74, 0.05) 1px, transparent 1px, transparent 64px);
+      pointer-events: none;
+    }
+
+    .brand {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand-text .mark {
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      font-size: 15px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold-bright);
+    }
+
+    .brand-text h1 {
+      font-family: 'Fraunces', serif;
+      font-weight: 500;
+      font-size: clamp(30px, 4vw, 42px);
+      line-height: 1.05;
+      margin: 10px 0 0;
+    }
+
+    .brand-text p {
+      margin: 14px 0 0;
+      max-width: 34ch;
+      color: rgba(250, 246, 236, 0.68);
+      font-size: 14.5px;
+      line-height: 1.55;
+    }
+
+    .update-btn {
+      flex: 0 0 auto;
+      background: transparent;
+      border: 1px solid rgba(250, 246, 236, 0.3);
+      color: rgba(250, 246, 236, 0.75);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 8px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: border-color .15s ease, color .15s ease;
+    }
+
+    .update-btn:hover:not(:disabled) {
+      border-color: var(--gold-bright);
+      color: var(--gold-bright);
+    }
+
+    .update-btn:disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+
+    .update-btn.status-ok {
+      border-color: #6FAE7A;
+      color: #9FD3A8;
+    }
+
+    .update-btn.status-error {
+      border-color: var(--danger);
+      color: #E39B8A;
+    }
+
+    .stage {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 22px;
+      margin: auto 0;
+    }
+
+    .orb-wrap {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(232, 185, 74, 0.35);
+      opacity: 0;
+    }
+
+    .ring1 {
+      width: 100%;
+      height: 100%;
+    }
+
+    .ring2 {
+      width: 130%;
+      height: 130%;
+    }
+
+    body.listening .ring {
+      animation: pulse 2.2s ease-out infinite;
+    }
+
+    body.listening .ring2 {
+      animation-delay: 0.6s;
+    }
+
+    body.bot-speaking .ring {
+      animation: pulse 1.2s ease-out infinite;
+      border-color: rgba(250, 246, 236, 0.5);
+    }
+
+    body.bot-speaking .ring2 {
+      animation-delay: 0.3s;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(0.85);
+        opacity: 0.75;
+      }
+
+      100% {
+        transform: scale(1.15);
+        opacity: 0;
+      }
+    }
+
+    #talkBtn {
+      position: relative;
+      z-index: 2;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(160deg, var(--gold-bright), var(--gold) 70%);
+      box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+    #talkBtn:hover {
+      transform: translateY(-2px);
+    }
+
+    #talkBtn:active {
+      transform: translateY(0px) scale(0.98);
+    }
+
+    body.connected #talkBtn {
+      background: linear-gradient(160deg, #DC6B52, var(--danger) 70%);
+    }
+
+    #talkBtn svg {
+      width: 46px;
+      height: 46px;
+    }
+
+    #talkBtn .icon-mic {
+      fill: var(--panel-grey-2);
+    }
+
+    body.connected #talkBtn .icon-mic {
+      display: none;
+    }
+
+    #talkBtn .icon-stop {
+      display: none;
+      fill: #fff;
+    }
+
+    body.connected #talkBtn .icon-stop {
+      display: block;
+    }
+
+    .status-line {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(250, 246, 236, 0.55);
+      min-height: 16px;
+    }
+
+    body.connecting .status-line::before {
+      content: "Connecting…";
+    }
+
+    body.connected.listening .status-line::before {
+      content: "Listening — tap to end";
+    }
+
+    body.connected.bot-speaking .status-line::before {
+      content: "FinBot is speaking";
+    }
+
+    body:not(.connected):not(.connecting) .status-line::before {
+      content: "Tap to talk to FinBot";
+    }
+
+    .foot-note {
+      position: relative;
+      z-index: 1;
+      font-size: 12px;
+      color: rgba(250, 246, 236, 0.45);
+      display: flex;
+      justify-content: space-between;
+    }
+
+
+
+    .transcript-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      padding: 40px 40px 28px;
+    }
+
+    .transcript-header {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--paper-line);
+    }
+
+    .transcript-header h2 {
+      font-family: 'Fraunces', serif;
+      font-weight: 500;
+      font-size: 19px;
+      margin: 0;
+    }
+
+    .transcript-header .live-dot {
+      display: none;
+      align-items: center;
+      gap: 7px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    body.connected .transcript-header .live-dot {
+      display: flex;
+    }
+
+    .transcript-header .live-dot::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--danger);
+      animation: blink 1.6s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.25;
+      }
+    }
+
+    .transcript-feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 4px 8px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--paper-line) transparent;
+    }
+
+    .transcript-empty {
+      margin: auto 0;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13.5px;
+      max-width: 30ch;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.6;
+    }
+
+    .bubble-row {
+      display: flex;
+      max-width: 82%;
+    }
+
+    .bubble-row.user {
+      align-self: flex-end;
+      justify-content: flex-end;
+    }
+
+    .bubble-row.bot {
+      align-self: flex-start;
+    }
+
+    .bubble {
+      padding: 11px 15px;
+      border-radius: 14px;
+      font-size: 14.5px;
+      line-height: 1.5;
+      word-wrap: break-word;
+    }
+
+    .bubble-row.user .bubble {
+      background: var(--user-bubble);
+      color: var(--paper);
+      border-bottom-right-radius: 4px;
+    }
+
+    .bubble-row.bot .bubble {
+      background: var(--bot-bubble);
+      color: var(--ink);
+      border: 1px solid var(--paper-line);
+      border-bottom-left-radius: 4px;
+    }
+
+    .bubble-row.user.interim .bubble {
+      background: transparent;
+      color: var(--muted);
+      border: 1px dashed var(--paper-line);
+      font-style: italic;
+    }
+
+    .bubble-row.bot.pending .bubble::after {
+      content: "…";
+      opacity: 0.5;
+    }
+
+    @media (max-width: 860px) {
+      body {
+        flex-direction: column;
+      }
+
+      .call-panel {
+        flex: 0 0 auto;
+        padding: 32px 24px;
+      }
+
+      .stage {
+        margin: 24px 0;
+      }
+
+      .transcript-panel {
+        flex: 1 1 auto;
+        min-height: 320px;
+        padding: 24px;
+      }
+
+    }
+  </style>
+</head>
+
+<body>
+
+  <section class="call-panel">
+    <div class="brand">
+      <div class="brand-text">
+        <div class="mark">IndiaFirst Bank</div>
+        <h1>FinBot</h1>
+        <p>Your voice assistant for balances, payment status, and payment policy — speak naturally, in English, Hindi,
+          or
+          Hinglish.</p>
+      </div>
+      <button id="updateBtn" class="update-btn" title="Upload a policy PDF to update FinBot's knowledge">Update</button>
+      <input type="file" id="policyFileInput" accept="application/pdf" style="display:none" />
+    </div>
+
+    <div class="stage">
+      <div class="orb-wrap">
+        <span class="ring ring1"></span>
+        <span class="ring ring2"></span>
+        <button id="talkBtn" aria-label="Tap to talk to FinBot">
+          <svg class="icon-mic" viewBox="0 0 24 24">
+            <path
+              d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z" />
+          </svg>
+          <svg class="icon-stop" viewBox="0 0 24 24">
+            <rect x="6" y="6" width="12" height="12" rx="2" />
+          </svg>
+        </button>
+      </div>
+      <div class="status-line"></div>
+    </div>
+
+    <div class="foot-note">
+      <span>Barge-in enabled</span>
+      <span>1800-200-1234</span>
+    </div>
+  </section>
+
+  <section class="transcript-panel">
+    <div class="transcript-header">
+      <h2>Transcript</h2>
+      <span class="live-dot">Live</span>
+    </div>
+    <div class="transcript-feed" id="transcriptFeed">
+      <p class="transcript-empty">Tap the button to start a call — what you say and FinBot's replies will appear here as
+        you talk.</p>
+    </div>
+  </section>
+
+  <script>
+    (() => {
+      const body = document.body;
+      const talkBtn = document.getElementById('talkBtn');
+
+      const MIC_SAMPLE_RATE = 16000;   // must match AUDIO_IN_SAMPLE_RATE in server_latency.py
+      const BOT_SAMPLE_RATE = 24000;   // must match AUDIO_OUT_SAMPLE_RATE in server_latency.py
+
+      let ws = null;
+      let micStream = null;
+      let micCtx = null;
+      let micNode = null;
+      let playCtx = null;
+      let playHeadTime = 0;
+      let activeSources = [];
+      let active = false;
+
+      // ---------------- Policy update (PDF upload -> /upload) ----------------
+
+      const updateBtn = document.getElementById('updateBtn');
+      const policyFileInput = document.getElementById('policyFileInput');
+      const UPDATE_BTN_DEFAULT_TEXT = updateBtn.textContent;
+      let updateBtnResetTimer = null;
+
+      function setUpdateBtnStatus(text, statusClass, resetAfterMs) {
+        updateBtn.textContent = text;
+        updateBtn.classList.remove('status-ok', 'status-error');
+        if (statusClass) updateBtn.classList.add(statusClass);
+        if (updateBtnResetTimer) clearTimeout(updateBtnResetTimer);
+        if (resetAfterMs) {
+          updateBtnResetTimer = setTimeout(() => {
+            updateBtn.textContent = UPDATE_BTN_DEFAULT_TEXT;
+            updateBtn.classList.remove('status-ok', 'status-error');
+          }, resetAfterMs);
+        }
+      }
+
+      updateBtn.addEventListener('click', () => {
+        policyFileInput.click();
+      });
+
+      policyFileInput.addEventListener('change', async () => {
+        const file = policyFileInput.files[0];
+        if (!file) return;
+
+        updateBtn.disabled = true;
+        setUpdateBtnStatus('Uploading…', null, null);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+          const res = await fetch('/upload', { method: 'POST', body: formData });
+          const data = await res.json().catch(() => ({}));
+
+          if (res.ok) {
+            console.log('[upload] ingested', data);
+            setUpdateBtnStatus('Ingested ✓', 'status-ok', 3000);
+          } else {
+            console.error('[upload] error', data);
+            setUpdateBtnStatus('Upload failed', 'status-error', 3000);
+          }
+        } catch (err) {
+          console.error('[upload] network error', err);
+          setUpdateBtnStatus('Upload failed', 'status-error', 3000);
+        } finally {
+          updateBtn.disabled = false;
+          policyFileInput.value = '';
+        }
+      });
+
+      // ---------------- Live transcript feed ----------------
+
+      const transcriptFeed = document.getElementById('transcriptFeed');
+      let userRow = null;   // current in-progress/final user bubble row
+      let botRow = null;    // current in-progress bot bubble row
+      let botText = '';     // accumulated text for the current bot reply
+
+      function clearEmptyState() {
+        const empty = transcriptFeed.querySelector('.transcript-empty');
+        if (empty) empty.remove();
+      }
+
+      function scrollFeedToBottom() {
+        transcriptFeed.scrollTop = transcriptFeed.scrollHeight;
+      }
+
+      function makeRow(kind) {
+        clearEmptyState();
+        const row = document.createElement('div');
+        row.className = `bubble-row ${kind}`;
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        row.appendChild(bubble);
+        transcriptFeed.appendChild(row);
+        scrollFeedToBottom();
+        return row;
+      }
+
+      function setRowText(row, text, shouldScroll = true) {
+        row.querySelector('.bubble').textContent = text;
+
+        if (shouldScroll) {
+          scrollFeedToBottom();
+        }
+      }
+
+      function onInterimTranscript(text) {
+        if (!text) return;
+
+        if (!userRow) {
+          onBotStoppedSpeaking();
+          userRow = makeRow('user interim');
+        }
+
+        setRowText(userRow, text, false);
+      }
+
+      function onFinalTranscript(text) {
+        if (!userRow) {
+          onBotStoppedSpeaking();
+          userRow = makeRow('user');
+        }
+
+        userRow.className = 'bubble-row user';
+        setRowText(userRow, text || '', true);
+        userRow = null;
+      }
+
+      // Bot speech streams in as multiple TTS text chunks per reply, so we
+      // accumulate them onto one growing bubble for the turn.
+      function onBotStartedSpeaking() {
+        botText = '';
+        botRow = makeRow('bot pending');
+      }
+
+      function onBotText(chunk) {
+        if (!chunk) return;
+        if (!botRow) onBotStartedSpeaking();
+        botText = botText ? `${botText} ${chunk}` : chunk;
+        setRowText(botRow, botText);
+      }
+
+      function onBotStoppedSpeaking() {
+        if (botRow) botRow.classList.remove('pending');
+        botRow = null;
+        botText = '';
+      }
+
+      // ---------------- Playback (bot audio) ----------------
+
+      function ensurePlayCtx() {
+        if (!playCtx) {
+          playCtx = new (window.AudioContext || window.webkitAudioContext)();
+          playHeadTime = playCtx.currentTime;
+        }
+        return playCtx;
+      }
+
+      function stopAllPlayback() {
+        activeSources.forEach(src => { try { src.stop(); } catch (e) { } });
+        activeSources = [];
+        if (playCtx) playHeadTime = playCtx.currentTime;
+      }
+
+      function playPcmChunk(arrayBuffer) {
+        ensurePlayCtx();
+        // Safari (and sometimes Chrome) can silently re-suspend a context,
+        // e.g. after the tab loses focus. Defensive resume on every chunk
+        // is cheap and a no-op when already running.
+        if (playCtx.state !== 'running') {
+          playCtx.resume().catch(() => { });
+        }
+
+        const int16 = new Int16Array(arrayBuffer);
+        const float32 = new Float32Array(int16.length);
+        for (let i = 0; i < int16.length; i++) float32[i] = int16[i] / 32768;
+
+        const buffer = playCtx.createBuffer(1, float32.length, BOT_SAMPLE_RATE);
+        buffer.copyToChannel(float32, 0);
+
+        const src = playCtx.createBufferSource();
+        src.buffer = buffer;
+        src.connect(playCtx.destination);
+
+        const startAt = Math.max(playHeadTime, playCtx.currentTime);
+        const queuedMs = Math.max(
+          0,
+          (playHeadTime - playCtx.currentTime) * 1000
+        );
+
+        console.log(`[audio] queued=${queuedMs.toFixed(0)}ms`);
+        src.start(startAt);
+        playHeadTime = startAt + buffer.duration;
+
+        activeSources.push(src);
+        src.onended = () => {
+          activeSources = activeSources.filter(s => s !== src);
+        };
+      }
+
+      // ---------------- Mic capture ----------------
+
+      async function startMic() {
+        micStream = await navigator.mediaDevices.getUserMedia({
+          audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true }
+        });
+
+        micCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const source = micCtx.createMediaStreamSource(micStream);
+
+        // Smaller buffer = less time audio sits waiting before being sent.
+        micNode = micCtx.createScriptProcessor(1024, 1, 1);
+        const ratio = micCtx.sampleRate / MIC_SAMPLE_RATE;
+
+        micNode.onaudioprocess = (e) => {
+          if (!active || !ws || ws.readyState !== WebSocket.OPEN) return;
+          const input = e.inputBuffer.getChannelData(0);
+          const outLength = Math.floor(input.length / ratio);
+          const int16 = new Int16Array(outLength);
+          for (let i = 0; i < outLength; i++) {
+            const srcIndex = i * ratio;
+            const s = input[Math.floor(srcIndex)] || 0;
+            const clamped = Math.max(-1, Math.min(1, s));
+            int16[i] = clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff;
+          }
+          ws.send(int16.buffer);
+        };
+
+        source.connect(micNode);
+        micNode.connect(micCtx.destination); // required by some browsers for onaudioprocess to fire
+      }
+
+      function stopMic() {
+        if (micNode) { micNode.disconnect(); micNode.onaudioprocess = null; micNode = null; }
+        if (micCtx) { micCtx.close(); micCtx = null; }
+        if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+      }
+
+      // ---------------- WebSocket / call lifecycle ----------------
+
+      function wsUrl() {
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+        return `${proto}://${location.host}/ws`;
+      }
+
+      async function startCall() {
+        // Create + unlock the playback AudioContext synchronously, still
+        // inside this click handler's call stack (execution up to the
+        // first `await` below runs synchronously). Creating it later --
+        // e.g. lazily in playPcmChunk() when the first TTS chunk arrives
+        // over the WebSocket -- happens outside any user gesture, and
+        // Safari in particular then keeps that context permanently
+        // "suspended": audio bytes arrive and get scheduled on buffer
+        // sources fine, they just never actually produce sound. Confirmed
+        // as the root cause of "mic works, transcripts are correct, but I
+        // can't hear the bot" earlier this session.
+        ensurePlayCtx();
+        try { await playCtx.resume(); } catch (e) { }
+
+        body.classList.add('connecting');
+
+        try {
+          await startMic();
+        } catch (err) {
+          body.classList.remove('connecting');
+          return;
+        }
+
+        ws = new WebSocket(wsUrl());
+        ws.binaryType = 'arraybuffer';
+
+        ws.onopen = () => {
+          active = true;
+          body.classList.remove('connecting');
+          body.classList.add('connected', 'listening');
+        };
+
+        ws.onmessage = (event) => {
+          if (typeof event.data === 'string') {
+            let msg;
+            try { msg = JSON.parse(event.data); } catch { return; }
+            console.log('[ws] recv', msg);
+            handleEvent(msg);
+          } else {
+            playPcmChunk(event.data);
+          }
+        };
+
+        ws.onclose = (e) => { console.log('[ws] closed', e.code, e.reason); endCall(false); };
+        ws.onerror = (e) => { console.log('[ws] error', e); endCall(false); };
+      }
+
+      function handleEvent(msg) {
+        switch (msg.type) {
+          case 'user_started_speaking':
+            body.classList.remove('bot-speaking');
+            body.classList.add('listening');
+            stopAllPlayback();
+            // A new user turn starting is the one boundary we can always
+            // trust — bot_stopped_speaking doesn't reliably fire between
+            // every reply (fast-path tool replies push TTS text directly
+            // rather than going through a full started/stopped cycle), so
+            // relying on it alone let consecutive bot replies merge into
+            // one growing bubble. Force-close whatever bot bubble is open.
+            onBotStoppedSpeaking();
+            break;
+          case 'user_stopped_speaking':
+            break;
+          case 'interim_transcript':
+            onInterimTranscript(msg.text);
+            break;
+          case 'final_transcript':
+            onFinalTranscript(msg.text);
+            break;
+          case 'bot_started_speaking':
+            body.classList.remove('listening');
+            body.classList.add('bot-speaking');
+            onBotStartedSpeaking();
+            break;
+          case 'bot_text':
+            onBotText(msg.text);
+            break;
+          case 'bot_stopped_speaking':
+            body.classList.remove('bot-speaking');
+            body.classList.add('listening');
+            onBotStoppedSpeaking();
+            break;
+        }
+      }
+
+      function endCall(userInitiated) {
+        active = false;
+        stopMic();
+        stopAllPlayback();
+        if (ws) {
+          try { ws.close(); } catch (e) { }
+          ws = null;
+        }
+        body.classList.remove('connected', 'connecting', 'listening', 'bot-speaking');
+        userRow = null;
+        botRow = null;
+        botText = '';
+      }
+
+      talkBtn.addEventListener('click', () => {
+        if (body.classList.contains('connected') || body.classList.contains('connecting')) {
+          endCall(true);
+        } else {
+          startCall();
+        }
+      });
+    })();
+  </script>
+</body>
+
+</html>
